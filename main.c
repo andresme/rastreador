@@ -67,7 +67,7 @@ void traceChild(pid_t child, bool verbose_enabled, bool step_enabled){
 	while(1){
 		wait(NULL);
 		orig_rax = ptrace(PTRACE_PEEKUSER,
-                          child, 8 * ORIG_RAX,
+                          child, REG_SPACE,
                           NULL);
         if(orig_rax == -1){
 			printVerbose("Exit system call executed\n", 0l, verbose_enabled);
@@ -100,11 +100,18 @@ void printVerbose(char* msg, long reg, bool verbose_enabled){
 }
 
 void initializeArray(void){
-	FILE *file = fopen("syscalls", "r");
+	#ifdef __i386__
+		FILE *file = fopen("syscalls32", "r");
+		int max = 338;
+	#else
+		FILE *file = fopen("syscalls", "r");
+		int max = 323;
+	#endif
+	
 	char buff[256];
 	rewind(file);
 	int i = 0;
-	while(fgets(buff, 256, file) != NULL && i < 323) {
+	while(fgets(buff, 256, file) != NULL && i < max) {
         names[i] = malloc(strlen(buff) + 1);
         strcpy(names[i], buff);
         i++;
@@ -113,7 +120,13 @@ void initializeArray(void){
 }
 
 void printResults(void){
-	for(int i = 0; i < 323; i++){
+	#ifdef __i386__
+		int max = 338;
+	#else
+		int max = 323;
+	#endif
+	
+	for(int i = 0; i < max; i++){
 		if(accumulative_syscalls[i] > 0){
 			printf("| code: %d\t|\tcount: %d\t| name: %s", i, accumulative_syscalls[i], names[i]);
 		}
